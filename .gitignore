@@ -1,0 +1,29 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Local databases
+*.sqlite
+backend/database.sqlite
+
+# Production build outputs
+dist/
+**/dist/
+
+# Uploaded employee documents
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Environment files
+.env
+**/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE/OS files
+.DS_Store
+.vscode/
+.idea/
+*.log
