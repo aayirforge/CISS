@@ -31,23 +31,34 @@ export default function Sidebar({ notificationsCount, onMarkNotificationsRead })
   };
 
   const navItems = [];
+  const isStaff = user && !['Super Admin', 'Admin'].includes(user.role);
+  const isUserTeamLeader = user && user.role === 'Team Leader';
 
-  if (user && user.role === 'Employee') {
-    navItems.push(
-      { name: 'Dashboard', path: '/employee', icon: LayoutDashboard },
-      { name: 'Clock In/Out', path: '/employee/attendance', icon: CalendarDays },
-      { name: 'Leave Management', path: '/employee/leaves', icon: FileCheck }
-    );
+  if (isStaff) {
+    if (user.role === 'Employee') {
+      navItems.push(
+        { name: 'Dashboard', path: '/employee', icon: LayoutDashboard },
+        { name: 'Clock In/Out', path: '/employee/attendance', icon: CalendarDays },
+        { name: 'Leave Management', path: '/employee/leaves', icon: FileCheck }
+      );
 
-    if (user.designation?.toLowerCase() === 'accountant' && user.canPreparePayroll === true) {
-      navItems.push({ name: 'Prepare Salary', path: '/employee/payroll', icon: CreditCard });
+      if (user.designation?.toLowerCase() === 'accountant' && user.canPreparePayroll === true) {
+        navItems.push({ name: 'Prepare Salary', path: '/employee/payroll', icon: CreditCard });
+      }
+
+      navItems.push(
+        { name: 'Salary Breakdown', path: '/employee/salary', icon: Wallet },
+        { name: 'My Profile', path: '/employee/profile', icon: UserCircle }
+      );
+    } else {
+      // Non-employee staff roles (HR Manager, Accountant, Senior Accountant, Team Leader)
+      navItems.push(
+        { name: 'Clock In/Out', path: '/employee/attendance', icon: CalendarDays },
+        { name: 'My Leaves', path: '/employee/leaves', icon: FileCheck },
+        { name: 'My Salary', path: '/employee/salary', icon: Wallet },
+        { name: 'My Profile', path: '/employee/profile', icon: UserCircle }
+      );
     }
-
-    navItems.push(
-      { name: 'Salary Breakdown', path: '/employee/salary', icon: Wallet },
-      { name: 'My Profile', path: '/employee/profile', icon: UserCircle },
-      { name: 'Settings', path: '/settings', icon: Settings }
-    );
   }
 
   if (isAdmin() || isHR()) {
@@ -72,10 +83,15 @@ export default function Sidebar({ notificationsCount, onMarkNotificationsRead })
     );
   }
 
-  // Add settings link to admin/HR/Accountant sidebar
-  if (user && user.role !== 'Employee') {
-    navItems.push({ name: 'Settings', path: '/settings', icon: Settings });
+  // Team Leader view
+  if (isUserTeamLeader) {
+    navItems.push(
+      { name: 'Attendance Logs', path: '/admin/attendance', icon: CalendarDays }
+    );
   }
+
+  // Add settings link
+  navItems.push({ name: 'Settings', path: '/settings', icon: Settings });
 
   return (
     <>

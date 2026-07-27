@@ -17,6 +17,40 @@ export default function AdminAttendance() {
   const [showLivePanel, setShowLivePanel] = useState(false);
   const liveIntervalRef = useRef(null);
 
+  // Helper to map coordinates to relative % coordinates on the map container
+  const getMapPositions = (checkInLat, checkInLng, currentLat, currentLng) => {
+    const lat1 = parseFloat(checkInLat) || 28.6139;
+    const lng1 = parseFloat(checkInLng) || 77.2090;
+    const lat2 = parseFloat(currentLat) || lat1;
+    const lng2 = parseFloat(currentLng) || lng1;
+
+    if (lat1 === lat2 && lng1 === lng2) {
+      return {
+        in: { x: '50%', y: '50%' },
+        out: { x: '50%', y: '50%' },
+        path: { x1: '50%', y1: '50%', x2: '50%', y2: '50%' }
+      };
+    }
+
+    const minLat = Math.min(lat1, lat2);
+    const maxLat = Math.max(lat1, lat2);
+    const minLng = Math.min(lng1, lng2);
+    const maxLng = Math.max(lng1, lng2);
+
+    const latRange = maxLat - minLat || 0.0001;
+    const lngRange = maxLng - minLng || 0.0001;
+
+    // Map lng (x) to 15% - 85%, and lat (y) to 85% - 15% (since higher lat is up)
+    const getX = (lng) => 15 + ((lng - minLng) / lngRange) * 70;
+    const getY = (lat) => 85 - ((lat - minLat) / latRange) * 70;
+
+    return {
+      in: { x: `${getX(lng1)}%`, y: `${getY(lat1)}%` },
+      out: { x: `${getX(lng2)}%`, y: `${getY(lat2)}%` },
+      path: { x1: `${getX(lng1)}%`, y1: `${getY(lat1)}%`, x2: `${getX(lng2)}%`, y2: `${getY(lat2)}%` }
+    };
+  };
+
   useEffect(() => {
     fetchLogs();
   }, [date, deptFilter]);
@@ -80,6 +114,24 @@ export default function AdminAttendance() {
       setShowLivePanel(false);
     }
   };
+
+  const livePositions = selectedLiveUser 
+    ? getMapPositions(
+        selectedLiveUser.checkInLat, 
+        selectedLiveUser.checkInLng, 
+        selectedLiveUser.currentLat, 
+        selectedLiveUser.currentLng
+      )
+    : null;
+
+  const routePositions = selectedRoute
+    ? getMapPositions(
+        selectedRoute.checkInLat, 
+        selectedRoute.checkInLng, 
+        selectedRoute.checkOutLat, 
+        selectedRoute.checkOutLng
+      )
+    : null;
 
   return (
     <div className="space-y-6">
@@ -181,7 +233,7 @@ export default function AdminAttendance() {
                           `}>{log.status}</span>
                           {isActive && (
                             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 text-[8px] font-bold uppercase tracking-wide flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                               On Shift
                             </span>
                           )}
@@ -291,7 +343,7 @@ export default function AdminAttendance() {
               </div>
 
               {/* Selected user map view */}
-              {selectedLiveUser ? (
+              {selectedLiveUser && livePositions ? (
                 <div className="bg-slate-950 rounded-2xl p-3 border border-slate-800 relative overflow-hidden">
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:20px_20px] opacity-25" />
                   <div className="relative z-10">
@@ -302,21 +354,27 @@ export default function AdminAttendance() {
                       </span>
                     </div>
                     {/* Mini map visualization */}
-                    <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative flex items-center justify-center">
+                    <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative overflow-hidden">
                       {/* Check-in pin */}
-                      <div className="absolute top-1/4 left-1/4 flex flex-col items-center">
-                        <div className="w-2.5 h-2.5 bg-emerald-600 border border-white rounded-full flex items-center justify-center text-[5px] text-white font-bold">In</div>
-                        <span className="text-[6px] text-emerald-400 font-bold mt-0.5">Check In</span>
+                      <div 
+                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                        style={{ top: livePositions.in.y, left: livePositions.in.x }}
+                      >
+                        <div className="w-4 h-4 bg-emerald-600 border border-white rounded-full flex items-center justify-center text-[7px] text-white font-bold">In</div>
+                        <span className="text-[7px] text-emerald-400 font-bold mt-0.5 whitespace-nowrap">Check In</span>
                       </div>
                       {/* Dashed line */}
                       <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                        <line x1="25%" y1="25%" x2="70%" y2="65%" stroke="#10b981" strokeWidth="1.5" strokeDasharray="4" opacity="0.6" />
+                        <line x1={livePositions.path.x1} y1={livePositions.path.y1} x2={livePositions.path.x2} y2={livePositions.path.y2} stroke="#10b981" strokeWidth="1.5" strokeDasharray="4" opacity="0.6" />
                       </svg>
                       {/* Current live position */}
-                      <div className="absolute bottom-1/4 right-[20%] flex flex-col items-center">
-                        <div className="w-3 h-3 bg-cyan-500 rounded-full animate-ping absolute opacity-40" />
-                        <div className="w-3 h-3 bg-cyan-500 border-2 border-white rounded-full relative z-10" />
-                        <span className="text-[6px] text-cyan-400 font-bold mt-0.5">Now</span>
+                      <div 
+                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                        style={{ top: livePositions.out.y, left: livePositions.out.x }}
+                      >
+                        <div className="w-3.5 h-3.5 bg-cyan-500 rounded-full animate-ping absolute opacity-40" />
+                        <div className="w-3.5 h-3.5 bg-cyan-500 border-2 border-white rounded-full relative z-10" />
+                        <span className="text-[7px] text-cyan-400 font-bold mt-0.5">Now</span>
                       </div>
                     </div>
                     {/* Coordinate details */}
@@ -341,26 +399,32 @@ export default function AdminAttendance() {
               </h3>
               <div className="flex-1 bg-slate-950 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden border border-slate-800">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:20px_20px] opacity-25" />
-                {selectedRoute ? (
+                {selectedRoute && routePositions ? (
                   <div className="relative z-10 flex flex-col justify-between h-full space-y-4">
                     <div className="text-white">
                       <h4 className="font-bold text-xs">{selectedRoute.user?.fullName}</h4>
                       <p className="text-[8px] text-slate-400">Date: {selectedRoute.date}</p>
                     </div>
-                    <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative flex items-center justify-center">
-                      <div className="absolute top-1/4 left-1/4 flex flex-col items-center">
-                        <div className="w-3.5 h-3.5 bg-emerald-500 rounded-full animate-ping absolute" />
-                        <div className="w-3.5 h-3.5 bg-emerald-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">In</div>
-                        <span className="text-[8px] text-emerald-400 font-bold mt-1">Check In</span>
+                    <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative overflow-hidden">
+                      <div 
+                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                        style={{ top: routePositions.in.y, left: routePositions.in.x }}
+                      >
+                        <div className="w-4 h-4 bg-emerald-500 rounded-full animate-ping absolute" />
+                        <div className="w-4 h-4 bg-emerald-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">In</div>
+                        <span className="text-[8px] text-emerald-400 font-bold mt-1 whitespace-nowrap">Check In</span>
                       </div>
                       {selectedRoute.checkOutTime && (
                         <>
                           <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                            <line x1="25%" y1="25%" x2="75%" y2="75%" stroke="#6366f1" strokeWidth="2.5" strokeDasharray="5" />
+                            <line x1={routePositions.path.x1} y1={routePositions.path.y1} x2={routePositions.path.x2} y2={routePositions.path.y2} stroke="#6366f1" strokeWidth="2.5" strokeDasharray="5" />
                           </svg>
-                          <div className="absolute bottom-1/4 right-1/4 flex flex-col items-center">
-                            <div className="w-3.5 h-3.5 bg-rose-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">Out</div>
-                            <span className="text-[8px] text-rose-400 font-bold mt-1">Check Out</span>
+                          <div 
+                            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                            style={{ top: routePositions.out.y, left: routePositions.out.x }}
+                          >
+                            <div className="w-4 h-4 bg-rose-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">Out</div>
+                            <span className="text-[8px] text-rose-400 font-bold mt-1 whitespace-nowrap">Check Out</span>
                           </div>
                         </>
                       )}

@@ -81,6 +81,7 @@ export default function AttendanceScreen() {
     try {
       const loc = await getCurrentLocation();
       if (loc.lat && loc.lng) {
+        setCapturedLocation(loc);
         await axios.post('/api/attendance/location-ping', {
           lat: loc.lat,
           lng: loc.lng

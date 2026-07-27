@@ -19,6 +19,9 @@ import AdminLeaveApproval from './pages/AdminLeaveApproval';
 import AdminPayroll from './pages/AdminPayroll';
 import AdminAuditLogs from './pages/AdminAuditLogs';
 
+// Staff roles (all positions except Super Admin and Admin)
+const staffRoles = ['Employee', 'HR Manager', 'Accountant', 'Senior Accountant', 'Team Leader'];
+
 // Route guards
 function PrivateRoute({ children, allowedRoles }) {
   const { user, loading, hasRole } = useAuth();
@@ -36,10 +39,10 @@ function PrivateRoute({ children, allowedRoles }) {
   }
 
   if (allowedRoles && !hasRole(allowedRoles)) {
-    // If employee attempts admin access, redirect appropriately
-    return user.role === 'Employee' 
-      ? <Navigate to="/employee" replace /> 
-      : <Navigate to="/admin" replace />;
+    const isUserAdmin = ['Super Admin', 'Admin'].includes(user.role);
+    return isUserAdmin 
+      ? <Navigate to="/admin" replace /> 
+      : <Navigate to="/employee" replace />;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -83,7 +86,7 @@ export default function App() {
           <Route
             path="/employee"
             element={
-              <PrivateRoute allowedRoles={['Employee']}>
+              <PrivateRoute allowedRoles={staffRoles}>
                 <EmployeeDashboard />
               </PrivateRoute>
             }
@@ -91,7 +94,7 @@ export default function App() {
           <Route
             path="/employee/attendance"
             element={
-              <PrivateRoute allowedRoles={['Employee']}>
+              <PrivateRoute allowedRoles={staffRoles}>
                 <AttendanceScreen />
               </PrivateRoute>
             }
@@ -99,7 +102,7 @@ export default function App() {
           <Route
             path="/employee/profile"
             element={
-              <PrivateRoute allowedRoles={['Employee']}>
+              <PrivateRoute allowedRoles={staffRoles}>
                 <EmployeeProfile />
               </PrivateRoute>
             }
@@ -107,7 +110,7 @@ export default function App() {
           <Route
             path="/employee/leaves"
             element={
-              <PrivateRoute allowedRoles={['Employee']}>
+              <PrivateRoute allowedRoles={staffRoles}>
                 <LeaveManagement />
               </PrivateRoute>
             }
@@ -115,7 +118,7 @@ export default function App() {
           <Route
             path="/employee/salary"
             element={
-              <PrivateRoute allowedRoles={['Employee']}>
+              <PrivateRoute allowedRoles={staffRoles}>
                 <EmployeeSalary />
               </PrivateRoute>
             }
