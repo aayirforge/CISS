@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Calendar, Search, MapPin, Eye, X, Navigation, Radio, Users, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GoogleMap from '../components/GoogleMap';
 
 export default function AdminAttendance() {
   const [logs, setLogs] = useState([]);
@@ -355,27 +356,14 @@ export default function AdminAttendance() {
                     </div>
                     {/* Mini map visualization */}
                     <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative overflow-hidden">
-                      {/* Check-in pin */}
-                      <div 
-                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                        style={{ top: livePositions.in.y, left: livePositions.in.x }}
-                      >
-                        <div className="w-4 h-4 bg-emerald-600 border border-white rounded-full flex items-center justify-center text-[7px] text-white font-bold">In</div>
-                        <span className="text-[7px] text-emerald-400 font-bold mt-0.5 whitespace-nowrap">Check In</span>
-                      </div>
-                      {/* Dashed line */}
-                      <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                        <line x1={livePositions.path.x1} y1={livePositions.path.y1} x2={livePositions.path.x2} y2={livePositions.path.y2} stroke="#10b981" strokeWidth="1.5" strokeDasharray="4" opacity="0.6" />
-                      </svg>
-                      {/* Current live position */}
-                      <div 
-                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                        style={{ top: livePositions.out.y, left: livePositions.out.x }}
-                      >
-                        <div className="w-3.5 h-3.5 bg-cyan-500 rounded-full animate-ping absolute opacity-40" />
-                        <div className="w-3.5 h-3.5 bg-cyan-500 border-2 border-white rounded-full relative z-10" />
-                        <span className="text-[7px] text-cyan-400 font-bold mt-0.5">Now</span>
-                      </div>
+                      <GoogleMap
+                        startLat={selectedLiveUser.checkInLat}
+                        startLng={selectedLiveUser.checkInLng}
+                        endLat={selectedLiveUser.currentLat}
+                        endLng={selectedLiveUser.currentLng}
+                        endLabel="Now"
+                        type="live"
+                      />
                     </div>
                     {/* Coordinate details */}
                     <div className="mt-2.5 space-y-1 text-[11px] text-slate-400 font-mono bg-slate-900/50 p-2 border border-slate-800/40 rounded-xl">
@@ -406,28 +394,14 @@ export default function AdminAttendance() {
                       <p className="text-[8px] text-slate-400">Date: {selectedRoute.date}</p>
                     </div>
                     <div className="w-full h-80 bg-slate-900 border border-slate-800/60 rounded-xl relative overflow-hidden">
-                      <div 
-                        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                        style={{ top: routePositions.in.y, left: routePositions.in.x }}
-                      >
-                        <div className="w-4 h-4 bg-emerald-500 rounded-full animate-ping absolute" />
-                        <div className="w-4 h-4 bg-emerald-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">In</div>
-                        <span className="text-[8px] text-emerald-400 font-bold mt-1 whitespace-nowrap">Check In</span>
-                      </div>
-                      {selectedRoute.checkOutTime && (
-                        <>
-                          <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                            <line x1={routePositions.path.x1} y1={routePositions.path.y1} x2={routePositions.path.x2} y2={routePositions.path.y2} stroke="#6366f1" strokeWidth="2.5" strokeDasharray="5" />
-                          </svg>
-                          <div 
-                            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                            style={{ top: routePositions.out.y, left: routePositions.out.x }}
-                          >
-                            <div className="w-4 h-4 bg-rose-600 border border-white rounded-full relative z-10 flex items-center justify-center text-[7px] text-white font-bold">Out</div>
-                            <span className="text-[8px] text-rose-400 font-bold mt-1 whitespace-nowrap">Check Out</span>
-                          </div>
-                        </>
-                      )}
+                      <GoogleMap
+                        startLat={selectedRoute.checkInLat}
+                        startLng={selectedRoute.checkInLng}
+                        endLat={selectedRoute.checkOutLat}
+                        endLng={selectedRoute.checkOutLng}
+                        endLabel="Check Out"
+                        type="route"
+                      />
                     </div>
                     <div className="space-y-1 text-[11px] text-slate-400 bg-slate-900/70 p-2.5 border border-slate-800 rounded-xl font-mono">
                       <div><strong>Check-in:</strong> {selectedRoute.checkInLat || '28.6139'}, {selectedRoute.checkInLng || '77.2090'}</div>

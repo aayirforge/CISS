@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 const runAutoCheckout = async () => {
   try {
     const todayStr = new Date().toISOString().split('T')[0];
-    const sixHoursMs = 6 * 60 * 60 * 1000;
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000;
     const now = new Date();
 
     // Find all checked-in records that haven't been checked out
@@ -18,28 +18,28 @@ const runAutoCheckout = async () => {
       const inTime = new Date(record.checkInTime);
       const diffMs = now.getTime() - inTime.getTime();
 
-      // If it's been more than 6 hours
-      if (diffMs >= sixHoursMs) {
-        const autoCheckOutTime = new Date(inTime.getTime() + sixHoursMs);
+      // If it's been more than 24 hours
+      if (diffMs >= twentyFourHoursMs) {
+        const autoCheckOutTime = new Date(inTime.getTime() + twentyFourHoursMs);
         
         await record.update({
           checkOutTime: autoCheckOutTime,
           checkOutAddress: 'Location not available (System Auto Checkout)',
-          workingHours: 6.0,
+          workingHours: 24.0,
           overtimeHours: 0.0,
-          status: 'Present' // Assuming 6 hours counts as present
+          status: 'Present' // Assuming 24 hours counts as present
         });
 
         await AuditLog.create({
           userId: record.userId,
           action: 'CHECK_OUT',
-          details: `System Auto Checked out at ${autoCheckOutTime.toLocaleTimeString()} (after 6 hours). Working Hours: 6.0, Status: Present`
+          details: `System Auto Checked out at ${autoCheckOutTime.toLocaleTimeString()} (after 24 hours). Working Hours: 24.0, Status: Present`
         });
 
         await Notification.create({
           userId: record.userId,
           title: 'System Auto Checkout',
-          message: `You forgot to clock out. The system automatically clocked you out after 6 hours.`
+          message: `You forgot to clock out. The system automatically clocked you out after 24 hours.`
         });
         
         console.log(`Auto-checked out user ${record.userId} for record ${record.id}`);
