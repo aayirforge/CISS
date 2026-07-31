@@ -2,6 +2,14 @@ const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 require('dotenv').config();
 
+console.log('--- DB Environment Variable Scan ---');
+for (const [key, value] of Object.entries(process.env)) {
+  if (value && value.includes('dpg-d92bf7ernols738tpebg-a')) {
+    console.log(`${key}: ${value.replace(/:[^:@]+@/, ':****@')}`);
+  }
+}
+console.log('-----------------------------------');
+
 // Rewrite PGHOST if set as a Render internal hostname
 if (process.env.PGHOST && process.env.PGHOST.startsWith('dpg-') && !process.env.PGHOST.includes('.')) {
   const region = process.env.RENDER_REGION || 'singapore';
