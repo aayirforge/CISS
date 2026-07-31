@@ -3,35 +3,24 @@ const path = require('path');
 require('dotenv').config();
 
 console.log('--- DB Environment Variable Scan ---');
+const INTERNAL_HOST = 'dpg-d92bf7ernols738tpebg-a';
+const RENDER_REGION = process.env.RENDER_REGION || 'singapore';
+const EXTERNAL_HOST = `${INTERNAL_HOST}.${RENDER_REGION}-postgres.render.com`;
+
 for (const [key, value] of Object.entries(process.env)) {
-  if (value && value.includes('dpg-d92bf7ernols738tpebg-a')) {
-    console.log(`${key}: ${value.replace(/:[^:@]+@/, ':****@')}`);
+  if (value && value.includes(INTERNAL_HOST)) {
+    console.log(`  Found ${key}: ${value.replace(/:[^:@]+@/, ':****@')}`);
+    // Rewrite ALL env vars containing the internal hostname
+    process.env[key] = value.replace(new RegExp(INTERNAL_HOST.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), EXTERNAL_HOST);
+    console.log(`  Rewrote ${key}: ${process.env[key].replace(/:[^:@]+@/, ':****@')}`);
   }
 }
 console.log('-----------------------------------');
 
-// Rewrite PGHOST if set as a Render internal hostname
-if (process.env.PGHOST && process.env.PGHOST.startsWith('dpg-') && !process.env.PGHOST.includes('.')) {
-  const region = process.env.RENDER_REGION || 'singapore';
-  process.env.PGHOST = `${process.env.PGHOST}.${region}-postgres.render.com`;
-  console.log(`Rewrote PGHOST to: ${process.env.PGHOST}`);
-}
-
 let sequelize;
 if (process.env.DATABASE_URL) {
-  let url = process.env.DATABASE_URL;
-  
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.hostname.startsWith('dpg-') && !parsedUrl.hostname.includes('.')) {
-      const region = process.env.RENDER_REGION || 'singapore';
-      parsedUrl.hostname = `${parsedUrl.hostname}.${region}-postgres.render.com`;
-      url = parsedUrl.toString();
-      console.log(`Rewrote Render internal DB URL to external: ${url.replace(/:[^:@]+@/, ':****@')}`);
-    }
-  } catch (err) {
-    console.error('Error parsing DATABASE_URL:', err);
-  }
+  const url = process.env.DATABASE_URL;
+  console.log(`Connecting to: ${url.replace(/:[^:@]+@/, ':****@')}`);
 
   sequelize = new Sequelize(url, {
     dialect: 'postgres',
