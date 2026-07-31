@@ -32,6 +32,9 @@ if (process.env.DATABASE_URL) {
             const regions = ['singapore', 'oregon', 'frankfurt', 'ohio'];
             const { Client } = require('pg');
             
+            // Delete connectionString so pg uses individual config parameters
+            delete config.connectionString;
+            
             for (const region of regions) {
               const extHost = `${config.host}.${region}-postgres.render.com`;
               const testClient = new Client({
@@ -41,7 +44,7 @@ if (process.env.DATABASE_URL) {
                 password: config.password,
                 database: config.database,
                 ssl: sslConfig,
-                connectionTimeoutMillis: 2000
+                connectionTimeoutMillis: 3000
               });
               try {
                 await testClient.connect();
