@@ -2,16 +2,27 @@ const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 require('dotenv').config();
 
+// Rewrite PGHOST if set as a Render internal hostname
+if (process.env.PGHOST && process.env.PGHOST.startsWith('dpg-') && !process.env.PGHOST.includes('.')) {
+  const region = process.env.RENDER_REGION || 'singapore';
+  process.env.PGHOST = `${process.env.PGHOST}.${region}-postgres.render.com`;
+  console.log(`Rewrote PGHOST to: ${process.env.PGHOST}`);
+}
+
 let sequelize;
 if (process.env.DATABASE_URL) {
   let url = process.env.DATABASE_URL;
   
-  // If it's a Render internal database URL (contains dpg- and no dots in the host)
-  if (url.includes('dpg-') && !url.includes('.render.com')) {
-    const region = process.env.RENDER_REGION || 'singapore';
-    const extDomain = `.${region}-postgres.render.com`;
-    url = url.replace(/@dpg-([^:/]+)/, `@dpg-$1${extDomain}`);
-    console.log(`Rewrote Render internal DB URL to external: ${url.replace(/:[^:@]+@/, ':****@')}`);
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname.startsWith('dpg-') && !parsedUrl.hostname.includes('.')) {
+      const region = process.env.RENDER_REGION || 'singapore';
+      parsedUrl.hostname = `${parsedUrl.hostname}.${region}-postgres.render.com`;
+      url = parsedUrl.toString();
+      console.log(`Rewrote Render internal DB URL to external: ${url.replace(/:[^:@]+@/, ':****@')}`);
+    }
+  } catch (err) {
+    console.error('Error parsing DATABASE_URL:', err);
   }
 
   sequelize = new Sequelize(url, {
