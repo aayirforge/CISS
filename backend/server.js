@@ -60,14 +60,30 @@ const seedUsers = async () => {
   console.log(' - Admin: admin@ciss.com (aayir1234)');
 };
 
+// Function to sync database with retry logic
+const syncWithRetry = async (retries = 5, delay = 5000) => {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await db.sequelize.sync({ alter: true });
+      console.log('Database synced successfully.');
+      return;
+    } catch (err) {
+      console.error(`Database sync attempt ${i} failed:`, err.message);
+      if (i === retries) throw err;
+      console.log(`Retrying in ${delay / 1000} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
 // Sync database and start server
-db.sequelize.sync({ alter: true }).then(async () => {
-  console.log('Database synced successfully.');
+syncWithRetry().then(async () => {
   await seedUsers();
   initAutoCheckoutJob();
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }).catch(err => {
-  console.error('Failed to sync database:', err);
+  console.error('Failed to sync database after retries:', err);
+  process.exit(1);
 });
