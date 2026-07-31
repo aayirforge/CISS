@@ -213,14 +213,14 @@ export default function AdminAttendance() {
                       <td className="py-3.5 px-2">
                         <div>
                           <div className="font-bold text-slate-800 dark:text-zinc-200">{formatTimeStr(log.checkInTime)}</div>
-                          <div className="text-[8px] text-slate-400 dark:text-zinc-500 truncate max-w-[100px]" title={log.checkInLat ? `${log.checkInLat}, ${log.checkInLng}` : (log.checkInAddress || 'N/A')}>{log.checkInLat ? `${log.checkInLat}, ${log.checkInLng}` : (log.checkInAddress || 'N/A')}</div>
+                          <div className="text-[8px] text-slate-400 dark:text-zinc-500 truncate max-w-[160px]" title={log.checkInAddress || (log.checkInLat ? `${log.checkInLat}, ${log.checkInLng}` : 'N/A')}>{log.checkInAddress || (log.checkInLat ? `${log.checkInLat}, ${log.checkInLng}` : 'N/A')}</div>
                         </div>
                       </td>
                       <td className="py-3.5 px-2">
                         {log.checkOutTime ? (
                           <div>
                             <div className="font-bold text-slate-800 dark:text-zinc-200">{formatTimeStr(log.checkOutTime)}</div>
-                            <div className="text-[8px] text-slate-400 dark:text-zinc-500 truncate max-w-[100px]" title={log.checkOutLat ? `${log.checkOutLat}, ${log.checkOutLng}` : (log.checkOutAddress || 'N/A')}>{log.checkOutLat ? `${log.checkOutLat}, ${log.checkOutLng}` : (log.checkOutAddress || 'N/A')}</div>
+                            <div className="text-[8px] text-slate-400 dark:text-zinc-500 truncate max-w-[160px]" title={log.checkOutAddress || (log.checkOutLat ? `${log.checkOutLat}, ${log.checkOutLng}` : 'N/A')}>{log.checkOutAddress || (log.checkOutLat ? `${log.checkOutLat}, ${log.checkOutLng}` : 'N/A')}</div>
                           </div>
                         ) : <span className="text-slate-400 dark:text-zinc-555">--:--</span>}
                       </td>
@@ -361,14 +361,22 @@ export default function AdminAttendance() {
                         startLng={selectedLiveUser.checkInLng}
                         endLat={selectedLiveUser.currentLat}
                         endLng={selectedLiveUser.currentLng}
+                        startAddress={selectedLiveUser.checkInAddress}
+                        endAddress={selectedLiveUser.currentAddress}
                         endLabel="Now"
                         type="live"
                       />
                     </div>
                     {/* Coordinate details */}
-                    <div className="mt-2.5 space-y-1 text-[11px] text-slate-400 font-mono bg-slate-900/50 p-2 border border-slate-800/40 rounded-xl">
-                      <div><strong className="text-slate-300">Check-in:</strong> {selectedLiveUser.checkInLat?.toFixed(5)}, {selectedLiveUser.checkInLng?.toFixed(5)} @ {formatTimeStr(selectedLiveUser.checkInTime)}</div>
-                      <div><strong className="text-cyan-400 font-bold">Current:</strong> {selectedLiveUser.currentLat?.toFixed(5)}, {selectedLiveUser.currentLng?.toFixed(5)} • {getTimeSince(selectedLiveUser.lastPingAt)}</div>
+                    <div className="mt-2.5 space-y-1 text-[10px] text-slate-400 font-sans bg-slate-900/50 p-2.5 border border-slate-800/40 rounded-xl">
+                      <div className="leading-relaxed"><strong className="text-slate-300">Check-In Address:</strong> {selectedLiveUser.checkInAddress || 'Location not available'}</div>
+                      <div className="leading-relaxed"><strong className="text-cyan-400 font-bold">Current Address:</strong> {selectedLiveUser.currentAddress || 'Tracking...'}</div>
+                      <div className="text-[9px] text-slate-500 font-mono mt-1 border-t border-slate-800/40 pt-1">
+                        Check-in coords: {selectedLiveUser.checkInLat?.toFixed(5)}, {selectedLiveUser.checkInLng?.toFixed(5)} @ {formatTimeStr(selectedLiveUser.checkInTime)}
+                      </div>
+                      <div className="text-[9px] text-cyan-500/80 font-mono">
+                        Current coords: {selectedLiveUser.currentLat?.toFixed(5)}, {selectedLiveUser.currentLng?.toFixed(5)} • {getTimeSince(selectedLiveUser.lastPingAt)}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -399,14 +407,24 @@ export default function AdminAttendance() {
                         startLng={selectedRoute.checkInLng}
                         endLat={selectedRoute.checkOutLat}
                         endLng={selectedRoute.checkOutLng}
+                        startAddress={selectedRoute.checkInAddress}
+                        endAddress={selectedRoute.checkOutAddress}
                         endLabel="Check Out"
                         type="route"
                       />
                     </div>
-                    <div className="space-y-1 text-[11px] text-slate-400 bg-slate-900/70 p-2.5 border border-slate-800 rounded-xl font-mono">
-                      <div><strong>Check-in:</strong> {selectedRoute.checkInLat || '28.6139'}, {selectedRoute.checkInLng || '77.2090'}</div>
+                    <div className="space-y-1 text-[10px] text-slate-400 bg-slate-900/70 p-2.5 border border-slate-800 rounded-xl font-sans">
+                      <div className="leading-relaxed"><strong className="text-slate-350">Check-In Address:</strong> {selectedRoute.checkInAddress || 'Location not available'}</div>
                       {selectedRoute.checkOutTime && (
-                        <div><strong>Check-out:</strong> {selectedRoute.checkOutLat || '28.6210'}, {selectedRoute.checkOutLng || '77.2185'}</div>
+                        <div className="leading-relaxed border-t border-slate-800/40 my-1 pt-1"><strong className="text-slate-350">Check-Out Address:</strong> {selectedRoute.checkOutAddress || 'Location not available'}</div>
+                      )}
+                      <div className="text-[9px] text-slate-500 font-mono mt-1 border-t border-slate-800/20 pt-1">
+                        Check-in coords: {selectedRoute.checkInLat || '28.6139'}, {selectedRoute.checkInLng || '77.2090'}
+                      </div>
+                      {selectedRoute.checkOutTime && (
+                        <div className="text-[9px] text-slate-500 font-mono">
+                          Check-out coords: {selectedRoute.checkOutLat || '28.6210'}, {selectedRoute.checkOutLng || '77.2185'}
+                        </div>
                       )}
                     </div>
                   </div>

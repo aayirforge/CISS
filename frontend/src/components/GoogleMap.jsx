@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function GoogleMap({ startLat, startLng, endLat, endLng, endLabel = 'Now', type = 'route' }) {
+export default function GoogleMap({ startLat, startLng, endLat, endLng, startAddress = '', endAddress = '', endLabel = 'Now', type = 'route' }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
@@ -46,10 +46,11 @@ export default function GoogleMap({ startLat, startLng, endLat, endLng, endLabel
     
     mapInstanceRef.current = map;
 
-    // CartoDB Dark Matter tile layer for premium dark aesthetics
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Standard Google Maps style roadmap tiles (Free, no API key required)
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps'
     }).addTo(map);
 
     const bounds = [];
@@ -65,13 +66,19 @@ export default function GoogleMap({ startLat, startLng, endLat, endLng, endLabel
         fillOpacity: 1
       }).addTo(map);
       
-      checkInMarker.bindPopup('<b style="color: #1e293b;">Check-In Point</b>');
+      const cleanAddress = startAddress || `Coords: ${sLat.toFixed(5)}, ${sLng.toFixed(5)}`;
+      checkInMarker.bindPopup(`<div style="color: #1e293b; font-size: 11px; max-width: 180px; font-family: sans-serif;"><strong style="color: #10b981;">Check-In Location</strong><br/><span style="color: #475569; font-size: 10px;">${cleanAddress}</span></div>`);
       bounds.push(startPos);
     }
 
     // 2. Check-Out / Live Marker (Red/Blue Circle)
     if (endPos) {
       const isLive = type === 'live';
+      const endPosLat = eLat;
+      const endPosLng = eLng;
+      const cleanEndAddress = endAddress || `Coords: ${endPosLat.toFixed(5)}, ${endPosLng.toFixed(5)}`;
+      const colorClass = isLive ? '#06b6d4' : '#ef4444';
+      
       const checkOutMarker = L.circleMarker(endPos, {
         radius: isLive ? 8 : 7,
         fillColor: isLive ? '#06b6d4' : '#ef4444', // Cyan for live, Red for check-out
@@ -80,7 +87,7 @@ export default function GoogleMap({ startLat, startLng, endLat, endLng, endLabel
         fillOpacity: 1
       }).addTo(map);
 
-      checkOutMarker.bindPopup(`<b style="color: #1e293b;">${endLabel} Point</b>`);
+      checkOutMarker.bindPopup(`<div style="color: #1e293b; font-size: 11px; max-width: 180px; font-family: sans-serif;"><strong style="color: ${colorClass};">${endLabel} Location</strong><br/><span style="color: #475569; font-size: 10px;">${cleanEndAddress}</span></div>`);
       bounds.push(endPos);
     }
 

@@ -327,11 +327,21 @@ const submitLocationPing = async (req, res) => {
       return res.status(400).json({ error: 'No active check-in session found.' });
     }
 
+    let address = 'Location not available';
+    try {
+      if (lat != null && lng != null) {
+        address = await reverseGeocode(parseFloat(lat), parseFloat(lng));
+      }
+    } catch (e) {
+      console.error('Error reverse geocoding location ping:', e);
+    }
+
     await LocationPing.create({
       userId,
       attendanceId: activeAttendance.id,
       lat: parseFloat(lat),
       lng: parseFloat(lng),
+      address,
       capturedAt: new Date()
     });
 
@@ -380,9 +390,11 @@ const getLiveLocations = async (req, res) => {
         checkInTime: attendance.checkInTime,
         checkInLat: attendance.checkInLat,
         checkInLng: attendance.checkInLng,
+        checkInAddress: attendance.checkInAddress,
         // Latest live location (or fallback to check-in location)
         currentLat: latestPing?.lat || attendance.checkInLat,
         currentLng: latestPing?.lng || attendance.checkInLng,
+        currentAddress: latestPing?.address || attendance.checkInAddress,
         lastPingAt: latestPing?.capturedAt || attendance.checkInTime,
         hasPing: !!latestPing
       });
