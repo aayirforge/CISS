@@ -2,27 +2,28 @@ const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 require('dotenv').config();
 
-console.log('--- DB Environment Variable Scan ---');
-const INTERNAL_HOST = 'dpg-d92bf7ernols738tpebg-a';
-const RENDER_REGION = process.env.RENDER_REGION || 'singapore';
-const EXTERNAL_HOST = `${INTERNAL_HOST}.${RENDER_REGION}-postgres.render.com`;
-
-for (const [key, value] of Object.entries(process.env)) {
-  if (value && value.includes(INTERNAL_HOST)) {
-    console.log(`  Found ${key}: ${value.replace(/:[^:@]+@/, ':****@')}`);
-    // Rewrite ALL env vars containing the internal hostname
-    process.env[key] = value.replace(new RegExp(INTERNAL_HOST.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), EXTERNAL_HOST);
-    console.log(`  Rewrote ${key}: ${process.env[key].replace(/:[^:@]+@/, ':****@')}`);
-  }
-}
-console.log('-----------------------------------');
-
 let sequelize;
 if (process.env.DATABASE_URL) {
-  const url = process.env.DATABASE_URL;
-  console.log(`Connecting to: ${url.replace(/:[^:@]+@/, ':****@')}`);
+  // Parse the DATABASE_URL ourselves for full control
+  const dbUrl = new URL(process.env.DATABASE_URL);
+  let host = dbUrl.hostname;
+  
+  // If this is a Render internal hostname, append the external region suffix
+  if (host.startsWith('dpg-') && !host.includes('.')) {
+    const region = process.env.RENDER_REGION || 'singapore';
+    host = `${host}.${region}-postgres.render.com`;
+  }
 
-  sequelize = new Sequelize(url, {
+  const port = dbUrl.port || 5432;
+  const username = decodeURIComponent(dbUrl.username);
+  const password = decodeURIComponent(dbUrl.password);
+  const database = dbUrl.pathname.replace(/^\//, '');
+
+  console.log(`DB Connection: host=${host}, port=${port}, user=${username}, db=${database}`);
+
+  sequelize = new Sequelize(database, username, password, {
+    host: host,
+    port: port,
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
