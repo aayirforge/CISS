@@ -4,67 +4,23 @@ require('dotenv').config();
 
 let sequelize;
 if (process.env.DATABASE_URL) {
-  const isRenderHost = (host) => host && host.startsWith('dpg-');
-  const isInternalRenderHost = (host) => isRenderHost(host) && !host.includes('.');
+  let url = process.env.DATABASE_URL;
+  
+  // If it's a Render internal database URL (contains dpg- and no dots in the host)
+  if (url.includes('dpg-') && !url.includes('.render.com')) {
+    const region = process.env.RENDER_REGION || 'singapore';
+    const extDomain = `.${region}-postgres.render.com`;
+    url = url.replace(/@dpg-([^:/]+)/, `@dpg-$1${extDomain}`);
+    console.log(`Rewrote Render internal DB URL to external: ${url.replace(/:[^:@]+@/, ':****@')}`);
+  }
 
-  const sslConfig = {
-    require: true,
-    rejectUnauthorized: false
-  };
-
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  sequelize = new Sequelize(url, {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' || 
-           (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('.render.com') || process.env.DATABASE_URL.includes('dpg-')))
-           ? sslConfig : false
-    }
-  });
-
-  console.log('Registering beforeConnect hook for Render Postgres connection...');
-  sequelize.addHook('beforeConnect', async (config) => {
-    console.log('beforeConnect hook config keys:', Object.keys(config), 'host:', config.host, 'connectionString:', config.connectionString ? 'exists' : 'does not exist');
-    if (isInternalRenderHost(config.host)) {
-      const dns = require('dns').promises;
-      try {
-        await dns.lookup(config.host);
-        console.log(`Render internal database host ${config.host} resolved successfully.`);
-      } catch (dnsErr) {
-        console.warn(`Render internal database host ${config.host} not resolvable. Finding external region...`);
-        const regions = ['singapore', 'oregon', 'frankfurt', 'ohio'];
-        const { Client } = require('pg');
-        
-        // Delete connectionString so pg uses individual config parameters
-        delete config.connectionString;
-        
-        for (const region of regions) {
-          const extHost = `${config.host}.${region}-postgres.render.com`;
-          const testClient = new Client({
-            host: extHost,
-            port: config.port || 5432,
-            user: config.username,
-            password: config.password,
-            database: config.database,
-            ssl: sslConfig,
-            connectionTimeoutMillis: 3000
-          });
-          try {
-            await testClient.connect();
-            await testClient.query('SELECT 1');
-            await testClient.end();
-            
-            console.log(`Successfully connected to database using external region: ${region}`);
-            config.host = extHost;
-            config.ssl = sslConfig;
-            if (!config.dialectOptions) config.dialectOptions = {};
-            config.dialectOptions.ssl = sslConfig;
-            return;
-          } catch (err) {
-            try { await testClient.end(); } catch (e) {}
-          }
-        }
-        console.error('Failed to resolve database host to any Render region.');
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
       }
     }
   });
