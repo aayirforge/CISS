@@ -22,6 +22,7 @@ if (process.env.DATABASE_URL) {
     },
     hooks: {
       beforeConnect: async (config) => {
+        console.log('beforeConnect hook config keys:', Object.keys(config), 'host:', config.host, 'connectionString:', config.connectionString ? 'exists' : 'does not exist');
         if (isInternalRenderHost(config.host)) {
           const dns = require('dns').promises;
           try {
